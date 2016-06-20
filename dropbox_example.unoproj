@@ -1,9 +1,10 @@
 {
-  "Name":"DropboxExample",
-  "RootNamespace":"",
+  "Name": "DropboxExample",
+  "RootNamespace": "",
   "Packages": [
-  	"Fuse",
-  	"FuseJS"
+    "Fuse",
+    "FuseJS",
+    "ObjC"
   ],
   "FusePM": {
     "Dependencies": [
@@ -11,6 +12,13 @@
     ]
   },
   "Includes": [
-    "*"
+    "*",
+    "local.js:Bundle"
+  ],
+  "Projects": [
+    "fuse_modules/bolav/fuse-cocoapods/cocoapods_include.unoproj"
+  ],
+  "Excludes": [
+    "fuse_modules/"
   ]
 }

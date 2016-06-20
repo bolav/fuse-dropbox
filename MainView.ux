@@ -1,3 +1,8 @@
 <App>
 	<Dropbox ux:Global="Dropbox" />
+	<JavaScript>
+		var j = require('local.js');
+		var db = require('Dropbox');
+		db.login(j.app_key, j.app_secret);
+	</JavaScript>
 </App>

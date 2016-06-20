@@ -1,0 +1,16 @@
+{
+  "Name":"DropboxExample",
+  "RootNamespace":"",
+  "Packages": [
+  	"Fuse",
+  	"FuseJS"
+  ],
+  "FusePM": {
+    "Dependencies": [
+      "https://github.com/bolav/fuse-cocoapods"
+    ]
+  },
+  "Includes": [
+    "*"
+  ]
+}

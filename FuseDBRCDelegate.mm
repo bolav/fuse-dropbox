@@ -13,20 +13,23 @@
 }
 
 - (void)restClient:(DBRestClient *)client loadedMetadata:(DBMetadata *)metadata {
+    NSMutableArray *ary = [[NSMutableArray alloc] init];
     if (metadata.isDirectory) {
-        NSLog(@"Folder '%@' contains:", metadata.path);
         for (DBMetadata *file in metadata.contents) {
-            NSLog(@"	%@", file.filename);
+            NSDictionary *dict = \\@{
+                @"filename" : file.filename,
+                @"path"     : file.path
+            };
+            [ary addObject:dict];
         }
     }
-    NSArray *currencies = @[@"Dollar", @"Euro", @"Pound"];
-    @{Dropbox:Of(self.fuseDb).MDResolve(ObjC.Object):Call(currencies)};
-
+    @{Dropbox:Of(self.fuseDb).MDResolve(ObjC.Object):Call(ary)};
 }
 
 - (void)restClient:(DBRestClient *)client
     loadMetadataFailedWithError:(NSError *)error {
     NSLog(@"Error loading metadata: %@", error);
+    @{Dropbox:Of(self.fuseDb).MDReject(string):Call(error.localizedDescription)};
 }
 
 @end

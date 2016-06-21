@@ -60,11 +60,15 @@ public class Dropbox : NativeModule {
 	extern(iOS) Promise<ObjC.Object> md_promise;
 
 	extern(iOS) void MDReject (string s) {
+		// return unless md_inprogress?
 		md_promise.Reject(new Exception(s));
+		md_inprogress = false;
 	}
 
 	extern(iOS) void MDResolve (ObjC.Object o) {
+		// return unless md_inprogress?
 		md_promise.Resolve(o);
+		md_inprogress = false;
 	}
 
 	[Require("Entity","Dropbox.MDReject(string)")]

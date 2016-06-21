@@ -21,11 +21,14 @@ cache:
     - $HOME/Library/Android
 #    - $HOME/fuse
 
-
 before_install:
   - ./.travis/install-ndk.sh
   - ./.travis/install-fuse.sh
   - ./.travis/install-fuseandroid.sh
+  - ./.travis/install-fusepm.sh
+
+before_script:
+    - fusepm install --unoproj ${UNOPROJ}.unoproj
 
 script:
   - ./.travis/test_uno.sh

@@ -1,6 +1,17 @@
 <Extensions Backend="CPlusPlus" Condition="iOS">
     <Require Key="Xcode.Plist.Element">
         <![CDATA[
+        <key>CFBundleURLTypes</key>
+        <array>
+                <dict>
+                        <key>CFBundleTypeRole</key>
+                        <string>Editor</string>
+                        <key>CFBundleURLSchemes</key>
+                        <array>
+                                <string>db-@(Project.Dropbox.AppKey)</string>
+                        </array>
+                </dict>
+        </array>
         <key>LSApplicationQueriesSchemes</key>
         <array>
             <string>dbapi-2</string>

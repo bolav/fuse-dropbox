@@ -19,8 +19,19 @@ public class Dropbox : NativeModule {
 		if (inited) {
 			return;
 		}
+		if defined(iOS) {
+			debug_log "Registering callback";
+			Uno.Platform2.Application.ReceivedURI += OnReceivedUri;
+		}
+
 		InitImpl(key, secret);
 		inited = true;
+	}
+
+	static void OnReceivedUri(object sender, string uri) {
+	    debug_log uri;
+	    // if (uri.Substring(0,2) == "fb")
+	    //    Register(uri);
 	}
 
 	object Login (Context c, object[] args)

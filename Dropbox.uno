@@ -52,6 +52,11 @@ public class Dropbox : NativeModule {
 	        link_promise.Reject(new Exception(s));
 	}
 
+	extern(!iOS) void LinkImpl() {
+	}
+	extern(!iOS) void InitImpl(string key, string secret) {
+	}
+
 	[Foreign(Language.ObjC)]
 	[Require("Source.Import","DropboxSDK/DropboxSDK.h")]
 	extern(iOS) void InitImpl (string key, string secret)

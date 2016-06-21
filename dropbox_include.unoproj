@@ -13,11 +13,5 @@
   "Includes": [
     "*.uxl",
     "*.uno"
-  ],
-  "Projects": [
-    "fuse_modules/bolav/fuse-cocoapods/cocoapods_include.unoproj"
-  ],
-  "Excludes": [
-    "fuse_modules/"
   ]
 }

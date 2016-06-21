@@ -8,10 +8,13 @@
   ],
   "FusePM": {
     "Dependencies": [
-      "https://github.com/bolav/fuse-cocoapods"
+      "https://github.com/bolav/fuse-cocoapods",
+      "https://github.com/bolav/fuse-foreignhelpers"
     ]
   },
   "Includes": [
-    "*"
+    "*",
+    "FuseDBRCDelegate.h:ObjCHeader:iOS",
+    "FuseDBRCDelegate.mm:ObjCSource:iOS"
   ]
 }

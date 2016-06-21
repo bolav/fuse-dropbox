@@ -27,7 +27,7 @@ public class Dropbox : NativeModule {
 		inited = true;
 	}
 
-	void OnReceivedUri(object sender, string uri) {
+	extern(iOS) void OnReceivedUri(object sender, string uri) {
 	    debug_log uri;
 	    if (uri.Substring(0,2) == "db")
 	       LinkCBImpl(uri);

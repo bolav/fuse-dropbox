@@ -7,6 +7,8 @@ using Fuse.Reactive;
 using Uno.Compiler.ExportTargetInterop;
 using Bolav.ForeignHelpers;
 
+// ios: https://www.dropbox.com/developers-v1/core/start/ios
+
 [ForeignInclude(Language.ObjC, "FuseDBRCDelegate.h")]
 public class Dropbox : NativeModule {
 
@@ -110,6 +112,8 @@ public class Dropbox : NativeModule {
 	extern(iOS) void MetadataImpl (string path)
 	@{
 		::id dbrc = @{Dropbox:Of(_this).restClient:Get()};
+		// Needs to run on main thread to get the callback from the delegate
+		// https://www.dropboxforum.com/hc/en-us/community/posts/202269029--DBRestClient-loadFile-intoPath-doesn-t-call-callbacks-unless-a-timer-is-pending-on-iOS
 		dispatch_async(dispatch_get_main_queue(), ^{
 			[dbrc loadMetadata:path];
 		});

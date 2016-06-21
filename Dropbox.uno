@@ -49,7 +49,7 @@ public class Dropbox : NativeModule {
 	@{
 		::id kw = [[UIApplication sharedApplication] keyWindow];
 		if (![[DBSession sharedSession] isLinked]) {
-		    [[DBSession sharedSession] linkFromController:self];
+		    [[DBSession sharedSession] linkFromController:kw];
 		}
 	@}
 

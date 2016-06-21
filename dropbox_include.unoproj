@@ -1,5 +1,4 @@
 {
-  "Name": "DropboxExample",
   "RootNamespace": "",
   "Packages": [
     "Fuse",
@@ -12,7 +11,8 @@
     ]
   },
   "Includes": [
-    "*"
+    "*.uxl",
+    "*.uno"
   ],
   "Projects": [
     "fuse_modules/bolav/fuse-cocoapods/cocoapods_include.unoproj"

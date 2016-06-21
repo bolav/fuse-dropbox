@@ -1,5 +1,6 @@
 using Uno;
 using Uno.Collections;
+using Uno.Threading;
 using Fuse;
 using Fuse.Scripting;
 using Fuse.Reactive;
@@ -9,8 +10,7 @@ public class Dropbox : NativeModule {
 
 	public Dropbox () {
 		// Add Load function to load image as a texture
-		debug_log "Dropbox";
-		AddMember(new NativeFunction("login", (NativeCallback)Login));
+		AddMember(new NativePromise<string, string>("link", Link, null));
 	}
 
 	bool inited = false;
@@ -20,7 +20,6 @@ public class Dropbox : NativeModule {
 			return;
 		}
 		if defined(iOS) {
-			debug_log "Registering callback";
 			Uno.Platform2.Application.ReceivedURI += OnReceivedUri;
 		}
 
@@ -28,19 +27,29 @@ public class Dropbox : NativeModule {
 		inited = true;
 	}
 
-	static void OnReceivedUri(object sender, string uri) {
+	void OnReceivedUri(object sender, string uri) {
 	    debug_log uri;
-	    // if (uri.Substring(0,2) == "fb")
-	    //    Register(uri);
+	    if (uri.Substring(0,2) == "db")
+	       LinkCBImpl(uri);
 	}
 
-	object Login (Context c, object[] args)
+	Promise<string> link_promise;
+	Future<string> Link (object[] args)
 	{
+		link_promise = new Promise<string>();
 		var key = args[0] as string;
 		var secret = args[1] as string;
 		Init(key, secret);
 		LinkImpl();
-		return null;
+		return link_promise;
+	}
+
+	public void Resolve(string s) {
+	        link_promise.Resolve(s);
+	}
+
+	public void Reject(string s) {
+	        link_promise.Reject(new Exception(s));
 	}
 
 	[Foreign(Language.ObjC)]
@@ -51,6 +60,7 @@ public class Dropbox : NativeModule {
 		      initWithAppKey:key
 		      appSecret:secret
 		      root:kDBRootAppFolder]; // either kDBRootAppFolder or kDBRootDropbox
+		[DBSession setSharedSession:dbSession];
 	@}
 
 
@@ -58,11 +68,29 @@ public class Dropbox : NativeModule {
 	[Foreign(Language.ObjC)]
 	extern(iOS) void LinkImpl ()
 	@{
-		::id kw = [[UIApplication sharedApplication] keyWindow];
+		::id rvc = [[[UIApplication sharedApplication] keyWindow] rootViewController];
 		if (![[DBSession sharedSession] isLinked]) {
-		    [[DBSession sharedSession] linkFromController:kw];
+		    [[DBSession sharedSession] linkFromController:rvc];
+		}
+		else {
+			@{Dropbox:Of(_this).Resolve(string):Call(@"already")};
 		}
 	@}
+
+	[Foreign(Language.ObjC)]
+	extern(iOS) void LinkCBImpl (string uri)
+	@{
+		NSURL *url = [[NSURL alloc] initWithString:uri];
+		if ([[DBSession sharedSession] handleOpenURL:url]) {
+		    if ([[DBSession sharedSession] isLinked]) {
+		        @{Dropbox:Of(_this).Resolve(string):Call(@"success")};
+		        return;
+		    }
+		    @{Dropbox:Of(_this).Reject(string):Call(@"fail")};
+		    return;
+		}
+	@}
+
 
 
 

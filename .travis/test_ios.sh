@@ -6,6 +6,8 @@ echo travis_fold:start:ios
 uno build -tiOS ${UNOPROJ}.unoproj -v -N
 exitcode=$?
 cd build/iOS/Debug
+echo Have Podfile?
+ls -l Podfile
 if [ -f "Podfile" ]
 then
 	pod install

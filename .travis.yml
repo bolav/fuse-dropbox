@@ -28,7 +28,10 @@ before_install:
   - ./.travis/install-fusepm.sh
 
 before_script:
+  - cat ${UNOPROJ}.unoproj
   - fusepm install --unoproj ${UNOPROJ}.unoproj
+  - cat ${UNOPROJ}.unoproj
+  - find
 
 script:
   - ./.travis/test_uno.sh

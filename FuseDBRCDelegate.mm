@@ -12,6 +12,18 @@
     NSLog(@"File upload failed with error: %@", error);
 }
 
+- (void)restClient:(DBRestClient *)client loadedFile:(NSString *)localPath
+    contentType:(NSString *)contentType metadata:(DBMetadata *)metadata {
+    NSLog(@"File loaded into path: %@", localPath);
+    NSLog(@"File loaded metadata:  %@", metadata);
+    @{Dropbox:Of(self.fuseDb).DLResolve(string):Call(localPath)};
+}
+
+- (void)restClient:(DBRestClient *)client loadFileFailedWithError:(NSError *)error {
+    NSLog(@"There was an error loading the file: %@", error);
+    @{Dropbox:Of(self.fuseDb).DLReject(string):Call(error.localizedDescription)};
+}
+
 - (void)restClient:(DBRestClient *)client loadedMetadata:(DBMetadata *)metadata {
     NSMutableArray *ary = [[NSMutableArray alloc] init];
     if (metadata.isDirectory) {

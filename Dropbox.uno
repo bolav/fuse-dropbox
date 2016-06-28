@@ -1,6 +1,7 @@
 using Uno;
 using Uno.Collections;
 using Uno.Threading;
+using Uno.IO;
 using Fuse;
 using Fuse.Scripting;
 using Fuse.Reactive;
@@ -15,8 +16,10 @@ public class Dropbox : NativeModule {
 	public Dropbox () {
 		// Add Load function to load image as a texture
 		AddMember(new NativePromise<string, string>("link", Link, null));
-		if defined(iOS)
+		if defined(iOS) {
 			AddMember(new NativePromise<ObjC.Object, Fuse.Scripting.Array>("metadata", Metadata, ConvertNSArray));
+			AddMember(new NativePromise<string, string>("download", Download, null));
+		}
 	}
 
 	extern(iOS) static Fuse.Scripting.Array ConvertNSArray(Context context, ObjC.Object result)
@@ -73,6 +76,13 @@ public class Dropbox : NativeModule {
 		md_inprogress = false;
 	}
 
+	public void InitRestClient () {
+		if (!inited_rc) {
+			restClient = InitRestClientImpl();
+			inited_rc = true;
+		}
+	}
+
 	[Require("Entity","Dropbox.MDReject(string)")]
 	[Require("Entity","Dropbox.MDResolve(ObjC.Object)")]
 	extern(iOS) Future<ObjC.Object> Metadata (object[] args)
@@ -85,12 +95,43 @@ public class Dropbox : NativeModule {
 		md_inprogress = true;
 		md_promise = p;
 		var path = args[0] as string;
-		if (!inited_rc) {
-			restClient = InitRestClientImpl();
-			inited_rc = true;
-		}
+		InitRestClient();
 		MetadataImpl(path);
 		return md_promise;
+	}
+
+	bool dl_inprogress = false;
+	extern(iOS) Promise<string> dl_promise;
+
+	extern(iOS) void DLReject (string s) {
+		// return unless md_inprogress?
+		dl_promise.Reject(new Exception(s));
+		dl_inprogress = false;
+	}
+
+	extern(iOS) void DLResolve (string s) {
+		// return unless md_inprogress?
+		dl_promise.Resolve(s);
+		dl_inprogress = false;
+	}
+
+	[Require("Entity","Dropbox.DLReject(string)")]
+	[Require("Entity","Dropbox.DLResolve(string)")]
+	extern(iOS) Future<string> Download (object[] args)
+	{
+		var p = new Promise<string>();
+		if (dl_inprogress) {
+			p.Reject(new Exception("In progress"));
+			return p;
+		}
+		dl_inprogress = true;
+		dl_promise = p;
+
+		var from_file = args[0].ToString();
+		var to_file = Path.Combine(Directory.GetUserDirectory(UserDirectory.Data), args[1].ToString());
+		InitRestClient();
+		DownloadImpl(from_file,to_file);
+		return dl_promise;
 	}
 
 	extern(iOS) ObjC.Object restClient;
@@ -108,7 +149,6 @@ public class Dropbox : NativeModule {
 	@}
 
 	[Foreign(Language.ObjC)]
-	[Require("Source.Import","DropboxSDK/DropboxSDK.h")]
 	extern(iOS) void MetadataImpl (string path)
 	@{
 		::id dbrc = @{Dropbox:Of(_this).restClient:Get()};
@@ -118,6 +158,16 @@ public class Dropbox : NativeModule {
 			[dbrc loadMetadata:path];
 		});
 	@}
+
+	[Foreign(Language.ObjC)]
+	extern(iOS) void DownloadImpl (string ff, string to)
+	@{
+		::id dbrc = @{Dropbox:Of(_this).restClient:Get()};
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[dbrc loadFile:ff intoPath:to];
+		});
+	@}
+
 
 	public void Resolve(string s) {
 	        link_promise.Resolve(s);

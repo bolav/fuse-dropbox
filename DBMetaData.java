@@ -1,7 +1,7 @@
 
 package no.ikke.fuse.dropbox;
 
-@{Promise<Java.Object>:IncludeDirective}
+@{JavaPromiseClosure:IncludeDirective}
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -114,11 +114,11 @@ public class DBMetaData extends AsyncTask<Void, Long, Boolean> {
             // Set the image now that we have it
 
             // resolve promise
-            @{Promise<Java.Object>:Of(mPromise).Resolve(Java.Object):Call(mList)};
+            @{JavaPromiseClosure:Of(mPromise).Resolve(Java.Object):Call(mList)};
         } else {
             // Couldn't download it, so show an error
 
-            @{Promise<Java.Object>:Of(mPromise).Reject(String):Call(mErrorMsg)};
+            @{JavaPromiseClosure:Of(mPromise).Reject(string):Call(mErrorMsg)};
         }
     }
 }

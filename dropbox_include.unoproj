@@ -15,8 +15,7 @@
     "*.uxl",
     "*.uno",
     "FuseDBRCDelegate.h:ObjCHeader:iOS",
-    "FuseDBRCDelegate.mm:ObjCSource:iOS",
-    "DBMetaData.java:Java:android"
+    "FuseDBRCDelegate.mm:ObjCSource:iOS"
   ],
   "Projects": [
     "fuse_modules/bolav/fuse-foreignhelpers/foreignhelpers_include.unoproj",

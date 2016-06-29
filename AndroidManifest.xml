@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="@(Activity.Package)"
+          android:versionCode="@(Project.Android.VersionCode)"
+          android:versionName="@(Project.Android.VersionName)">
+
+    <uses-sdk android:minSdkVersion="@(SDK.MinVersion)" android:targetSdkVersion="@(SDK.TargetVersion)" />
+    <uses-feature android:glEsVersion="0x00020000"/>
+
+    @(AndroidManifest.Permission:Join('\n    ', '<uses-permission android:name="', '" />'))
+    @(AndroidManifest.RootElement:Join('\n    '))
+
+    <application android:label="@(Project.Android.ApplicationLabel:EscapeXml)"
+#if !@(Project.Mobile.ShowStatusbar)
+                 android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+#endif
+                 android:icon="@mipmap/icon"
+                 android:description="@string/description">
+
+        <activity android:name="@(Activity.Name:EscapeXml)"
+                  android:label="@(Project.Android.ApplicationLabel:EscapeXml)"
+                  android:launchMode="singleTask"
+                  android:theme="@style/AppTheme"
+                  android:taskAffinity=""
+                  android:windowSoftInputMode="adjustResize"
+                  android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize"
+#if @(Project.Mobile.Orientations:Equals('Portrait')) || @(Project.Mobile.Orientations:Equals('Landscape'))
+android:screenOrientation="@(Project.Mobile.Orientations:Replace('Landscape', 'landscape'):Replace('Portrait', 'portrait'))"
+#else
+android:screenOrientation="user"
+#endif
+                  android:windowActionBar="false">
+            <meta-data android:name="android.app.lib_name" android:value="@(Activity.Name:EscapeXml)" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+#if @(Project.Mobile.UriScheme:IsSet)
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="@(Project.Mobile.UriScheme)"/>
+            </intent-filter>
+#endif
+        </activity>
+        <activity
+          android:name="com.dropbox.client2.android.AuthActivity"
+          android:launchMode="singleTask"
+          android:theme="@android:style/Theme.Translucent.NoTitleBar"
+          android:configChanges="orientation|keyboard">
+          <intent-filter>
+            <!-- Change this to be db- followed by your app key -->
+            <data android:scheme="db-@(Project.Dropbox.AppKey)" />
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <category android:name="android.intent.category.DEFAULT" />
+          </intent-filter>
+        </activity>
+
+        @(AndroidManifest.ApplicationElement:Join('\n        '))
+#if @(Project.Android.Geo.ApiKey:IsSet)
+        <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
+        <meta-data android:name="com.google.android.geo.API_KEY"
+                   android:value="@(Project.Android.Geo.ApiKey)"/>
+#endif
+    </application>
+</manifest>

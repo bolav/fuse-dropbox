@@ -1,0 +1,8 @@
+<Package>
+<Extensions Backend="CPlusPlus" Condition="Android">
+    <CopyFile Name="dropbox-android-sdk-1.6.3/lib/dropbox-android-sdk-1.6.3.jar" TargetName="@(Java.LibsDirectory)/dropbox-android-sdk-1.6.3.jar" />
+    <CopyFile Name="dropbox-android-sdk-1.6.3/lib/json_simple-1.1.jar" TargetName="@(Java.LibsDirectory)/json_simple-1.1.jar" />
+    <ProcessFile Name="AndroidManifest.xml" TargetName="@(Java.ProjectDirectory)/main/AndroidManifest.xml" />
+</Extensions>
+
+</Package>

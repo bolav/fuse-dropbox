@@ -9,8 +9,18 @@ using Uno.Compiler.ExportTargetInterop;
 using Bolav.ForeignHelpers;
 
 // ios: https://www.dropbox.com/developers-v1/core/start/ios
+// android: https://www.dropbox.com/developers-v1/core/sdks/android
 
+[ForeignInclude(Language.Java, 
+	"com.dropbox.client2.DropboxAPI", 
+	"com.dropbox.client2.android.AndroidAuthSession", 
+	"com.dropbox.client2.android.AuthActivity", 
+	"com.dropbox.client2.session.AccessTokenPair", 
+	"com.dropbox.client2.session.AppKeyPair",
+	"com.fuse.Activity")]
 [ForeignInclude(Language.ObjC, "FuseDBRCDelegate.h")]
+[Require("Gradle.Dependencies.Compile","files('src/main/libs/dropbox-android-sdk-1.6.3.jar')")]
+[Require("Gradle.Dependencies.Compile","files('src/main/libs/json_simple-1.1.jar')")]
 public class Dropbox : NativeModule {
 
 	public Dropbox () {
@@ -135,6 +145,7 @@ public class Dropbox : NativeModule {
 	}
 
 	extern(iOS) ObjC.Object restClient;
+	extern(Android) string restClient;
 
 	[Foreign(Language.ObjC)]
 	[Require("Source.Import","DropboxSDK/DropboxSDK.h")]
@@ -147,6 +158,10 @@ public class Dropbox : NativeModule {
 		return dbrc;
 
 	@}
+
+	extern(Android) string InitRestClientImpl () {
+		return "";
+	}
 
 	[Foreign(Language.ObjC)]
 	extern(iOS) void MetadataImpl (string path)
@@ -179,8 +194,24 @@ public class Dropbox : NativeModule {
 
 	extern(!iOS) void LinkImpl() {
 	}
-	extern(!iOS) void InitImpl(string key, string secret) {
+	extern(!Mobile) void InitImpl(string key, string secret) {
 	}
+
+	extern(Android) Java.Object mdb_api;
+
+	[Foreign(Language.Java)]
+	extern(Android) void InitImpl(string key, string secret) 
+	@{
+		// In the class declaration section:
+		DropboxAPI<AndroidAuthSession> mDBApi;
+
+		// And later in some initialization function:
+		AppKeyPair appKeys = new AppKeyPair(key, secret);
+		AndroidAuthSession session = new AndroidAuthSession(appKeys);
+		mDBApi = new DropboxAPI<AndroidAuthSession>(session);
+		mDBApi.getSession().startOAuth2Authentication(Activity.getRootActivity());
+		@{Dropbox:Of(_this).mdb_api:Set(mDBApi)};
+	@}
 
 	[Foreign(Language.ObjC)]
 	[Require("Source.Import","DropboxSDK/DropboxSDK.h")]

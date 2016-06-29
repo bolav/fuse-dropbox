@@ -10,7 +10,9 @@ echo Have Podfile?
 ls -l Podfile
 if [ -f "Podfile" ]
 then
+	echo "pod install"
 	pod install
+	echo "done pod install"
 	xcodebuild -workspace "${name}.xcworkspace" -scheme "${name}" -derivedDataPath build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 	exitcode2=$?
 else

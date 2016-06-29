@@ -17,7 +17,8 @@ using Bolav.ForeignHelpers;
 	"com.dropbox.client2.android.AuthActivity", 
 	"com.dropbox.client2.session.AccessTokenPair", 
 	"com.dropbox.client2.session.AppKeyPair",
-	"com.fuse.Activity")]
+	"com.fuse.Activity",
+	"no.ikke.fuse.dropbox.DBMetaData")]
 [ForeignInclude(Language.ObjC, "FuseDBRCDelegate.h")]
 [Require("Gradle.Dependencies.Compile","files('src/main/libs/dropbox-android-sdk-1.6.3.jar')")]
 [Require("Gradle.Dependencies.Compile","files('src/main/libs/json_simple-1.1.jar')")]
@@ -30,6 +31,10 @@ public class Dropbox : NativeModule {
 			AddMember(new NativePromise<ObjC.Object, Fuse.Scripting.Array>("metadata", Metadata, ConvertNSArray));
 			AddMember(new NativePromise<string, string>("download", Download, null));
 		}
+		if defined(Android) {
+			AddMember(new NativePromise<Java.Object, Fuse.Scripting.Array>("metadata", Metadata, ConvertJavaArray));
+			AddMember(new NativePromise<string, string>("download", Download, null));
+		}
 	}
 
 	extern(iOS) static Fuse.Scripting.Array ConvertNSArray(Context context, ObjC.Object result)
@@ -37,6 +42,10 @@ public class Dropbox : NativeModule {
 		var ary = new JSList(context);
 		ary.FromiOS(result);
 		return ary.GetScriptingArray();
+	}
+
+	extern(Android) static Fuse.Scripting.Array ConvertJavaArray(Context context, Java.Object result) {
+		return null;
 	}
 
 	bool inited = false;
@@ -73,8 +82,9 @@ public class Dropbox : NativeModule {
 	bool inited_rc = false;
 	bool md_inprogress = false;
 	extern(iOS) Promise<ObjC.Object> md_promise;
+	extern(Android) Promise<Java.Object> md_promise;
 
-	extern(iOS) void MDReject (string s) {
+	extern(Mobile) void MDReject (string s) {
 		// return unless md_inprogress?
 		md_promise.Reject(new Exception(s));
 		md_inprogress = false;
@@ -86,7 +96,13 @@ public class Dropbox : NativeModule {
 		md_inprogress = false;
 	}
 
-	public void InitRestClient () {
+	extern(Android) void MDResolve (Java.Object o) {
+		// return unless md_inprogress?
+		md_promise.Resolve(o);
+		md_inprogress = false;
+	}
+
+	extern(iOS) public void InitRestClient () {
 		if (!inited_rc) {
 			restClient = InitRestClientImpl();
 			inited_rc = true;
@@ -105,21 +121,29 @@ public class Dropbox : NativeModule {
 		md_inprogress = true;
 		md_promise = p;
 		var path = args[0] as string;
-		InitRestClient();
+		if defined(iOS) InitRestClient();
 		MetadataImpl(path);
 		return md_promise;
 	}
 
-	bool dl_inprogress = false;
-	extern(iOS) Promise<string> dl_promise;
+	extern(Android) Future<Java.Object> Metadata (object[] args)
+	{
+		var p = new Promise<Java.Object>();
+		var path = args[0] as string;
+		MetadataImpl(path, p);
+		return md_promise;
+	}
 
-	extern(iOS) void DLReject (string s) {
+	bool dl_inprogress = false;
+	extern(Mobile) Promise<string> dl_promise;
+
+	extern(Mobile) void DLReject (string s) {
 		// return unless md_inprogress?
 		dl_promise.Reject(new Exception(s));
 		dl_inprogress = false;
 	}
 
-	extern(iOS) void DLResolve (string s) {
+	extern(Mobile) void DLResolve (string s) {
 		// return unless md_inprogress?
 		dl_promise.Resolve(s);
 		dl_inprogress = false;
@@ -127,7 +151,7 @@ public class Dropbox : NativeModule {
 
 	[Require("Entity","Dropbox.DLReject(string)")]
 	[Require("Entity","Dropbox.DLResolve(string)")]
-	extern(iOS) Future<string> Download (object[] args)
+	extern(Mobile) Future<string> Download (object[] args)
 	{
 		var p = new Promise<string>();
 		if (dl_inprogress) {
@@ -139,13 +163,12 @@ public class Dropbox : NativeModule {
 
 		var from_file = args[0].ToString();
 		var to_file = Path.Combine(Directory.GetUserDirectory(UserDirectory.Data), args[1].ToString());
-		InitRestClient();
+		if defined(iOS) InitRestClient();
 		DownloadImpl(from_file,to_file);
 		return dl_promise;
 	}
 
 	extern(iOS) ObjC.Object restClient;
-	extern(Android) string restClient;
 
 	[Foreign(Language.ObjC)]
 	[Require("Source.Import","DropboxSDK/DropboxSDK.h")]
@@ -159,10 +182,6 @@ public class Dropbox : NativeModule {
 
 	@}
 
-	extern(Android) string InitRestClientImpl () {
-		return "";
-	}
-
 	[Foreign(Language.ObjC)]
 	extern(iOS) void MetadataImpl (string path)
 	@{
@@ -174,6 +193,15 @@ public class Dropbox : NativeModule {
 		});
 	@}
 
+	[Foreign(Language.Java)]
+	extern(Android) void MetadataImpl (string path, Future<Java.Object> p)
+	@{
+		DropboxAPI<AndroidAuthSession> dbapi = (DropboxAPI<AndroidAuthSession>)@{Dropbox:Of(_this).mdb_api:Get()};
+		DBMetaData dmd = new DBMetaData(dbapi, path, (com.uno.UnoObject)p);
+		dmd.execute();
+		return;
+	@}
+
 	[Foreign(Language.ObjC)]
 	extern(iOS) void DownloadImpl (string ff, string to)
 	@{
@@ -183,6 +211,11 @@ public class Dropbox : NativeModule {
 		});
 	@}
 
+	[Foreign(Language.ObjC)]
+	extern(Android) void DownloadImpl (string ff, string to)
+	@{
+		return;
+	@}
 
 	public void Resolve(string s) {
 	        link_promise.Resolve(s);

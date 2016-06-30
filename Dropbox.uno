@@ -3,6 +3,7 @@ using Uno.Collections;
 using Uno.Threading;
 using Uno.IO;
 using Fuse;
+using Fuse.Platform;
 using Fuse.Scripting;
 using Fuse.Reactive;
 using Uno.Compiler.ExportTargetInterop;
@@ -57,10 +58,35 @@ public class Dropbox : NativeModule {
 		if defined(iOS) {
 			Uno.Platform2.Application.ReceivedURI += OnReceivedUri;
 		}
+		if defined(Android) {
+			Fuse.Platform.Lifecycle.EnteringForeground += OnEnteringForeground;
+		}
 
 		InitImpl(key, secret);
 		inited = true;
 	}
+
+	[Foreign(Language.Java)]
+	extern(Android) void OnEnteringForeground(ApplicationState state)
+	@{
+		debug_log("OnEnteringForeground");
+		DropboxAPI<AndroidAuthSession> mDBApi = (DropboxAPI<AndroidAuthSession>)@{Dropbox:Of(_this).mdb_api:Get()};
+
+		if (mDBApi.getSession().authenticationSuccessful()) {
+		    try {
+		        // Required to complete auth, sets the access token on the session
+		        debug_log("authenticationSuccessful");
+		        mDBApi.getSession().finishAuthentication();
+
+		        String accessToken = mDBApi.getSession().getOAuth2AccessToken();
+		        debug_log("authenticationSuccessful " + accessToken);
+		        @{Dropbox:Of(_this).Resolve(string):Call("success")};
+		    } catch (IllegalStateException e) {
+		    	debug_log("Error authenticating " + e);
+			    @{Dropbox:Of(_this).Reject(string):Call("fail")};
+		    }
+		}
+	@}
 
 	extern(iOS) void OnReceivedUri(object sender, string uri) {
 	    debug_log uri;
@@ -128,8 +154,11 @@ public class Dropbox : NativeModule {
 
 	extern(Android) Future<Java.Object> Metadata (object[] args)
 	{
+		debug_log "Android Metadata";
 		var path = args[0] as string;
+		debug_log "instansiate metadata";
 		var p = new MetaData(mdb_api, path);
+		debug_log "returning promise";
 		return p;
 	}
 
@@ -300,6 +329,7 @@ public class Dropbox : NativeModule {
         [Foreign(Language.Java)]
         public MetaData(Java.Object mdb_api, string path)
         @{
+        	debug_log("MetaData");
 
         	new AsyncTask<Void, Void, Boolean>() {
 	        		ArrayList<Hashtable<String,String>> mList = new ArrayList<Hashtable<String,String>>();
@@ -308,9 +338,11 @@ public class Dropbox : NativeModule {
 
 				    @Override
         	        protected Boolean doInBackground(Void... params) {
+        	        	debug_log("doInBackground");
         	                try {
         	                    // Get the metadata for a directory
         	                    Entry dirent = mApi.metadata(path, 1000, null, true, null);
+        	        	debug_log("metadata return");
 
         	                    if (!dirent.isDir || dirent.contents == null) {
         	                        // It's not a directory, or there's nothing in it
@@ -378,19 +410,33 @@ public class Dropbox : NativeModule {
         	        protected void onPostExecute(Boolean result) {
        	                if (result) {
        	                    // resolve promise
-      	                    @{MetaData:Of(_this).Resolve(Java.Object):Call(mList)};
+       	                    debug_log("Resolving " + mList);
+       	                    @{SResolve(MetaData, Java.Object):Call(_this, mList)};
+      	                    // {MetaData:Of(_this).Resolve(Java.Object):Call(mList)};
        	                } else {
-       	                    @{MetaData:Of(_this).SReject(string):Call(mErrorMsg)};
+       	                    // {MetaData:Of(_this).SReject(string):Call(mErrorMsg)};
+       	                    @{SReject(MetaData, string):Call(_this, mErrorMsg)};
        	                }
         	        }
         	}.execute();
+        	debug_log("executing");
 
         @}
 
-        public void SReject(string reason)
+        public static void SReject(MetaData m, string reason)
         {
-            Reject(new Exception(reason));
+            m.Reject(new Exception(reason));
         }
+
+        public static void SResolve(MetaData m, Java.Object o)
+        {
+        	debug_log "SResolve";
+        	debug_log "SResolve " + m;
+        	debug_log "SResolve " + o;
+            m.Resolve(o);
+            debug_log "Resolved";
+        }
+
     }
 
 

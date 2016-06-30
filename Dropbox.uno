@@ -72,7 +72,7 @@ public class Dropbox : NativeModule {
 	extern(Android) void OnEnteringForeground(ApplicationState state)
 	@{
 		DropboxAPI<AndroidAuthSession> mDBApi = (DropboxAPI<AndroidAuthSession>)@{Dropbox:Of(_this).mdb_api:Get()};
-
+		// This needs to check if we are resolved!
 		if (mDBApi.getSession().authenticationSuccessful()) {
 		    try {
 		        // Required to complete auth, sets the access token on the session

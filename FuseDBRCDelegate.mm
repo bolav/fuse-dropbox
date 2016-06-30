@@ -30,7 +30,8 @@
         for (DBMetadata *file in metadata.contents) {
             NSDictionary *dict = \\@{
                 @"filename" : file.filename,
-                @"path"     : file.path
+                @"path"     : file.path,
+                @"rev"      : file.rev
             };
             [ary addObject:dict];
         }

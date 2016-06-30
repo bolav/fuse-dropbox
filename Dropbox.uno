@@ -176,7 +176,7 @@ public class Dropbox : NativeModule {
 
 	[Require("Entity","Dropbox.DLReject(string)")]
 	[Require("Entity","Dropbox.DLResolve(string)")]
-	extern(Mobile) Future<string> Download (object[] args)
+	extern(iOS) Future<string> Download (object[] args)
 	{
 		var p = new Promise<string>();
 		if (dl_inprogress) {
@@ -227,11 +227,13 @@ public class Dropbox : NativeModule {
 		});
 	@}
 
-	[Foreign(Language.ObjC)]
-	extern(Android) void DownloadImpl (string ff, string to)
-	@{
-		return;
-	@}
+	extern(Android) Future<string> Download (object[] args)
+	{
+		var from_file = args[0].ToString();
+		var to_file = Path.Combine(Directory.GetUserDirectory(UserDirectory.Data), args[1].ToString());
+		var p = new Download(mdb_api, from_file, to_file);
+		return p;
+	}
 
 	public void Resolve(string s) {
 	        link_promise.Resolve(s);
@@ -353,6 +355,7 @@ public class Dropbox : NativeModule {
         	                    	HashMap<String, String> ht = new HashMap<String, String>() {{ 
         	                    		put("filename", ent.fileName()); 
         	                    		put("path", ent.path); 
+        	                    		put("rev", ent.rev);
         	                    	}};
         	                    	mList.add(ht);
         	                    }
@@ -425,6 +428,125 @@ public class Dropbox : NativeModule {
         }
 
     }
+
+	[ForeignInclude(Language.Java,
+		"java.util.ArrayList",
+		"java.util.HashMap",
+		"java.io.FileOutputStream",
+		"java.io.FileNotFoundException",
+		"android.os.AsyncTask",
+		"com.dropbox.client2.DropboxAPI",
+		"com.dropbox.client2.DropboxAPI.Entry",
+		"com.dropbox.client2.DropboxAPI.DropboxFileInfo",
+		"com.dropbox.client2.android.AndroidAuthSession", 
+		"com.dropbox.client2.android.AuthActivity", 
+		"com.dropbox.client2.session.AccessTokenPair", 
+		"com.dropbox.client2.session.AppKeyPair",
+		"com.dropbox.client2.exception.DropboxParseException",
+		"com.dropbox.client2.exception.DropboxPartialFileException",
+		"com.dropbox.client2.exception.DropboxIOException",
+		"com.dropbox.client2.exception.DropboxException",
+		"com.dropbox.client2.exception.DropboxServerException",
+		"com.dropbox.client2.exception.DropboxUnlinkedException",
+		"com.fuse.Activity")]
+    extern(Android)
+    class Download : Promise<string>
+    {
+        public Download(Java.Object mdb_api, string frompath, string topath) {
+        	Init(mdb_api, frompath, topath);
+        }
+
+        [Foreign(Language.Java)]
+        public void Init(Java.Object mdb_api, string frompath, string topath)
+        @{
+
+        	new AsyncTask<Void, Void, Boolean>() {
+	        		ArrayList<HashMap<String,String>> mList = new ArrayList<HashMap<String,String>>();
+    	    		String mErrorMsg = "";
+        			DropboxAPI<AndroidAuthSession> mApi = (DropboxAPI<AndroidAuthSession>)mdb_api;
+
+				    @Override
+        	        protected Boolean doInBackground(Void... params) {
+		       	        	FileOutputStream mFos;
+        	                try {
+        	                    try {
+        	                        mFos = new FileOutputStream(topath);
+        	                    } catch (FileNotFoundException e) {
+        	                        mErrorMsg = "Couldn't create the local file " + topath;
+        	                        return false;
+        	                    }
+
+        	                    // Get the metadata for a directory
+        	                    DropboxFileInfo info = mApi.getFile(frompath, null, mFos, null);
+
+        	                    return true;
+
+        	                } catch (DropboxUnlinkedException e) {
+        	                    // The AuthSession wasn't properly authenticated or user unlinked.
+        	                } catch (DropboxPartialFileException e) {
+        	                    // We canceled the operation
+        	                    mErrorMsg = "Download canceled";
+        	                } catch (DropboxServerException e) {
+        	                    // Server-side exception.  These are examples of what could happen,
+        	                    // but we don't do anything special with them here.
+        	                    if (e.error == DropboxServerException._304_NOT_MODIFIED) {
+        	                        // won't happen since we don't pass in revision with metadata
+        	                    } else if (e.error == DropboxServerException._401_UNAUTHORIZED) {
+        	                        // Unauthorized, so we should unlink them.  You may want to
+        	                        // automatically log the user out in this case.
+        	                    } else if (e.error == DropboxServerException._403_FORBIDDEN) {
+        	                        // Not allowed to access this
+        	                    } else if (e.error == DropboxServerException._404_NOT_FOUND) {
+        	                        // path not found (or if it was the thumbnail, can't be
+        	                        // thumbnailed)
+        	                    } else if (e.error == DropboxServerException._406_NOT_ACCEPTABLE) {
+        	                        // too many entries to return
+        	                    } else if (e.error == DropboxServerException._415_UNSUPPORTED_MEDIA) {
+        	                        // can't be thumbnailed
+        	                    } else if (e.error == DropboxServerException._507_INSUFFICIENT_STORAGE) {
+        	                        // user is over quota
+        	                    } else {
+        	                        // Something else
+        	                    }
+        	                    // This gets the Dropbox error, translated into the user's language
+        	                    mErrorMsg = e.body.userError;
+        	                    if (mErrorMsg == null) {
+        	                        mErrorMsg = e.body.error;
+        	                    }
+        	                } catch (DropboxIOException e) {
+        	                    // Happens all the time, probably want to retry automatically.
+        	                    mErrorMsg = "Network error.  Try again.";
+        	                } catch (DropboxParseException e) {
+        	                    // Probably due to Dropbox server restarting, should retry
+        	                    mErrorMsg = "Dropbox error.  Try again.";
+        	                } catch (DropboxException e) {
+        	                    // Unknown error
+        	                    mErrorMsg = "Unknown error.  Try again.";
+        	                }
+        	                // 
+        	                return false;
+        	        }
+        	        @Override
+        	        protected void onPostExecute(Boolean result) {
+       	                if (result) {
+       	                    // resolve promise
+      	                    @{Download:Of(_this).Resolve(string):Call(topath)};
+       	                } else {
+       	                    @{Download:Of(_this).SReject(string):Call(mErrorMsg)};
+       	                    // {SReject(MetaData, string):Call(_this, mErrorMsg)};
+       	                }
+        	        }
+        	}.execute();
+
+        @}
+
+        public void SReject(string reason)
+        {
+            Reject(new Exception(reason));
+        }
+
+    }
+
 
 
 

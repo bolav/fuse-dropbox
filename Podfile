@@ -1,3 +1,3 @@
-target '@(Project.iOS.BundleName)' do
+target '@(Project.Name)' do
 	pod 'Dropbox-iOS-SDK'
 end

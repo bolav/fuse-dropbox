@@ -22,6 +22,7 @@ using Bolav.ForeignHelpers;
 [ForeignInclude(Language.ObjC, "FuseDBRCDelegate.h")]
 [Require("Gradle.Dependencies.Compile","files('src/main/libs/dropbox-android-sdk-1.6.3.jar')")]
 [Require("Gradle.Dependencies.Compile","files('src/main/libs/json_simple-1.1.jar')")]
+[Require("Cocoapods.Podfile.Target", "pod 'Dropbox-iOS-SDK'")]
 public class Dropbox : NativeModule {
 
 	public Dropbox () {
@@ -68,8 +69,6 @@ public class Dropbox : NativeModule {
 		inited = true;
 	}
 
-
-	[Require("Cocoapods.Podfile.Target", "pod 'Dropbox-iOS-SDK'")]
 	[Foreign(Language.Java)]
 	extern(Android) void OnEnteringForeground(ApplicationState state)
 	@{

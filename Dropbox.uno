@@ -68,6 +68,8 @@ public class Dropbox : NativeModule {
 		inited = true;
 	}
 
+
+	[Require("Cocoapods.Podfile.Target", "pod 'Dropbox-iOS-SDK'")]
 	[Foreign(Language.Java)]
 	extern(Android) void OnEnteringForeground(ApplicationState state)
 	@{

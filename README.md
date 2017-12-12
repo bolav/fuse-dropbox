@@ -1,3 +1,6 @@
+# !! OBSOLETE !!
+This project uses the v1 Dropbox API, which was [retired September 28th, 2017](https://blogs.dropbox.com/developers/2017/09/api-v1-shutdown-details/), and no longer works
+
 fuse-dropbox [![Build Status](https://travis-ci.org/bolav/fuse-dropbox.svg?branch=master)](https://travis-ci.org/bolav/fuse-dropbox) ![Fuse Version](http://fuse-version.herokuapp.com/?repo=https://github.com/bolav/fuse-dropbox)
 ============
 
